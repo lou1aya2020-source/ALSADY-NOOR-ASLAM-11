@@ -1,53 +1,62 @@
-name: Deploy to GitHub Pages
+name: Build and Deploy
 
 on:
   push:
     branches:
       - main
-      - master
   workflow_dispatch:
 
-# Allow ONE concurrent deployment
-concurrency:
-  group: 'pages'
-  cancel-in-progress: true
-
-# Permissions required for GitHub Pages deployment
 permissions:
   contents: read
   pages: write
   id-token: write
 
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Repository
+
+      # تحميل المشروع
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js Environment
+      # تثبيت Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
+      # تثبيت Dependencies
+      # لا يحتاج package-lock.json
       - name: Install Dependencies
-        run: npm ci
+        run: npm install
 
+      # بناء التطبيق
       - name: Build Web Application
         run: npm run build
 
-      - name: Setup GitHub Pages
-        uses: actions/configure-pages@v4
+      # تجهيز GitHub Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
 
-      - name: Upload Build Artifacts
+      # رفع ملفات البناء
+      - name: Upload Build Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist'
+          path: ./dist
 
+      # نشر التطبيق
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Deployment URL
+        run: |
+          echo "Application deployed successfully!"
+          echo "Deployment URL: ${{ steps.deployment.outputs.page_url }}"
