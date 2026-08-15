@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+
   workflow_dispatch:
 
 permissions:
@@ -12,51 +13,52 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: github-pages
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
 
+  build:
+    name: Build Web Application
     runs-on: ubuntu-latest
 
     steps:
 
-      # تحميل المشروع
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      # تثبيت Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
-      # تثبيت Dependencies
-      # لا يحتاج package-lock.json
       - name: Install Dependencies
         run: npm install
 
-      # بناء التطبيق
       - name: Build Web Application
         run: npm run build
 
-      # تجهيز GitHub Pages
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      # رفع ملفات البناء
       - name: Upload Build Artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./dist
 
-      # نشر التطبيق
+
+  deploy:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+
+    needs: build
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-      - name: Deployment URL
-        run: |
-          echo "Application deployed successfully!"
-          echo "Deployment URL: ${{ steps.deployment.outputs.page_url }}"
